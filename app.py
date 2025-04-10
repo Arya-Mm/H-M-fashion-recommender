@@ -80,11 +80,12 @@ st.subheader("📊 Data Insights")
 tab1, tab2 = st.tabs(["Sustainability Ratio", "Price Distribution"])
 
 with tab1:
+    df['sustainability_label'] = df['predicted_sustainability'].replace({0: "Not Sustainable", 1: "Sustainable"})
     fig, ax = plt.subplots()
-    sns.countplot(x="predicted_sustainability", data=df, ax=ax, palette="coolwarm")
-    ax.set_xticklabels(['Not Sustainable', 'Sustainable'])
+    sns.countplot(x="sustainability_label", data=df, ax=ax, palette="coolwarm")
     ax.set_title("Sustainability Prediction Ratio")
     st.pyplot(fig)
+
 
 with tab2:
     fig2, ax2 = plt.subplots()
