@@ -11,13 +11,16 @@ le_color = pickle.load(open("label_encoder_color.pkl", "rb"))
 le_cat = pickle.load(open("label_encoder_cat.pkl", "rb"))
 tfidf = pickle.load(open("tfidf_vectorizer.pkl", "rb"))
 
+
 df = pd.read_csv("processed_handm.csv")
 
-df['combined_text'] = df['productName'] + " " + df['details']
-df['combined_text'] = df['combined_text'].fillna("").astype(str)
-tfidf_matrix = tfidf.transform(df['combined_text'])
 
+df['combined_text'] = (df['productName'].fillna("") + " " + df['details'].fillna("")).astype(str)
+
+
+tfidf_matrix = tfidf.transform(df['combined_text'])
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
+
 
 if 'predicted_sustainability' not in df.columns:
     df['colorName_encoded'] = le_color.transform(df['colorName'])
@@ -25,21 +28,26 @@ if 'predicted_sustainability' not in df.columns:
     features = df[['price', 'colorName_encoded', 'mainCatCode_encoded']]
     df['predicted_sustainability'] = model.predict(features)
 
-st.set_page_config(page_title="Sustainable Fashion Recommender", layout="wide")
-st.title("H&M Sustainable Fashion Recommender")
 
-st.sidebar.header(" Filter Options")
+st.set_page_config(page_title="Sustainable Fashion Recommender", layout="wide")
+st.title("🛍️ H&M Sustainable Fashion Recommender")
+
+
+st.sidebar.header("🎯 Filter Options")
 price = st.sidebar.slider("Price", float(df.price.min()), float(df.price.max()), float(df.price.mean()))
 color = st.sidebar.selectbox("Color", sorted(df.colorName.unique()))
 cat = st.sidebar.selectbox("Category", sorted(df.mainCatCode.unique()))
 top_n = st.sidebar.slider("Recommendations", 1, 10, 5)
 
+
 color_enc = le_color.transform([color])[0]
 cat_enc = le_cat.transform([cat])[0]
-user_input = pd.DataFrame([[price, color_enc, cat_enc]], columns=['price', 'colorName', 'mainCatCode'])
 
+user_input = pd.DataFrame([[price, color_enc, cat_enc]], columns=['price', 'colorName', 'mainCatCode'])
 prediction = model.predict(user_input)[0]
-st.markdown(f"Sustainability Prediction: {'Yes ✅' if prediction == 1 else 'No ❌'}")
+
+st.markdown(f"### 🧵 Sustainability Prediction: {'Yes ✅' if prediction == 1 else 'No ❌'}")
+
 
 def recommend(product_id, top_n=5, sustainable_only=True):
     if product_id not in df['productId'].values:
@@ -53,14 +61,20 @@ def recommend(product_id, top_n=5, sustainable_only=True):
     indices = [i[0] for i in sim_scores[:top_n]]
     return df.iloc[indices][['productId', 'productName', 'price', 'details']]
 
-st.subheader("Similar Sustainable Products")
-product_id = st.text_input("Enter a Product ID to get Recommendations", value="1258600003")
-if st.button("Recommend"):
-    recs = recommend(int(product_id), top_n=top_n)
-    if not recs.empty:
-        st.dataframe(recs)
-    else:
-        st.warning("Product not found or no similar sustainable items.")
+
+st.subheader("🔄 Similar Sustainable Products")
+product_id = st.text_input("🔍 Enter a Product ID to get Recommendations", value="1258600003")
+
+if st.button("🎁 Recommend"):
+    try:
+        recs = recommend(int(product_id), top_n=top_n)
+        if not recs.empty:
+            st.dataframe(recs)
+        else:
+            st.warning("Product not found or no similar sustainable items.")
+    except ValueError:
+        st.error("Please enter a valid numeric Product ID.")
+
 
 st.subheader("📊 Data Insights")
 tab1, tab2 = st.tabs(["Sustainability Ratio", "Price Distribution"])
