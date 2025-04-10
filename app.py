@@ -12,9 +12,11 @@ le_cat = pickle.load(open("label_encoder_cat.pkl", "rb"))
 tfidf = pickle.load(open("tfidf_vectorizer.pkl", "rb"))
 
 df = pd.read_csv("processed_handm.csv")
-df['combined_text'] = df['productName'] + " " + df['details']
 
+df['combined_text'] = df['productName'] + " " + df['details']
+df['combined_text'] = df['combined_text'].fillna("").astype(str)
 tfidf_matrix = tfidf.transform(df['combined_text'])
+
 cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
 if 'predicted_sustainability' not in df.columns:
